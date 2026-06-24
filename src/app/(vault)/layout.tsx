@@ -12,7 +12,7 @@ export default async function VaultLayout({
   })
 
   if (!session) {
-    redirect('/login')
+    redirect('/sign-in')
   }
 
   return <div><main>{children}</main></div>

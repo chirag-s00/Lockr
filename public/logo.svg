@@ -1,0 +1,31 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="128" cy="128" r="112" fill="#111827"/>
+
+  <!-- Shield -->
+  <path
+    d="M128 44L192 68V120C192 166 163 204 128 220C93 204 64 166 64 120V68L128 44Z"
+    fill="#1F2937"
+    stroke="#60A5FA"
+    stroke-width="6"
+  />
+
+  <!-- Vault Door -->
+  <circle
+    cx="128"
+    cy="118"
+    r="42"
+    fill="#111827"
+    stroke="#60A5FA"
+    stroke-width="5"
+  />
+
+  <!-- Vault Spokes -->
+  <line x1="128" y1="90" x2="128" y2="146" stroke="#60A5FA" stroke-width="4"/>
+  <line x1="100" y1="118" x2="156" y2="118" stroke="#60A5FA" stroke-width="4"/>
+  <line x1="108" y1="98" x2="148" y2="138" stroke="#60A5FA" stroke-width="4"/>
+  <line x1="148" y1="98" x2="108" y2="138" stroke="#60A5FA" stroke-width="4"/>
+
+  <!-- Center Lock -->
+  <circle cx="128" cy="118" r="8" fill="#60A5FA"/>
+</svg>
