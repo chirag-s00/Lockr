@@ -121,7 +121,7 @@ export const SignUpView = () => {
                         <FormControl>
                           <Input
                             type="text"
-                            placeholder="John Doe"
+                            placeholder=""
                             {...field}
                           />
                         </FormControl>
@@ -178,7 +178,7 @@ export const SignUpView = () => {
                         <FormControl>
                           <Input
                             type="password"
-                            placeholder="********"
+                            placeholder=""
                             {...field}
                           />
                         </FormControl>
