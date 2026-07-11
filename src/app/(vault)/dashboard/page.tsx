@@ -1,21 +1,19 @@
-"use client"
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-import { authClient } from "@/lib/auth-client"
-import { useRouter } from "next/navigation"
+import { auth } from "@/lib/auth";
+import { DashboardView } from "@/modules/dashboard/dashboard-view";
 
-export default function LogoutButton() {
-  const router = useRouter()
+const Page = async () => {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  return (
-    <button
-      onClick={async () => {
-        await authClient.signOut()
+  if (!session) {
+    redirect("/");
+  }
 
-        router.refresh()
-        router.push("/sign-in")
-      }}
-    >
-      Logout
-    </button>
-  )
+  return <DashboardView />
 }
+ 
+export default Page;
