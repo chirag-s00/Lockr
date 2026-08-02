@@ -1,0 +1,1 @@
+ALTER TABLE "vault_files" ADD COLUMN "iv" text NOT NULL;

@@ -54,3 +54,38 @@ export function decryptData<T>(encrypted: {
 
   return JSON.parse(decrypted.toString('utf8')) as T
 }
+
+export function encryptBuffer(
+  buffer: Buffer,
+): { ciphertext: Buffer; iv: string } {
+  const key = getKey()
+  const ivBytes = crypto.randomBytes(12)
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, ivBytes)
+
+  const encrypted = Buffer.concat([
+    cipher.update(buffer),
+    cipher.final(),
+    cipher.getAuthTag(),
+  ])
+
+  return {
+    ciphertext: encrypted,
+    iv: ivBytes.toString('base64'),
+  }
+}
+
+export function decryptBuffer(
+  ciphertext: Buffer,
+  iv: string,
+): Buffer {
+  const key = getKey()
+  const ivBytes = Buffer.from(iv, 'base64')
+
+  const authTag = ciphertext.subarray(ciphertext.length - 16)
+  const data = ciphertext.subarray(0, ciphertext.length - 16)
+
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, ivBytes)
+  decipher.setAuthTag(authTag)
+
+  return Buffer.concat([decipher.update(data), decipher.final()])
+}

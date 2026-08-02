@@ -128,5 +128,6 @@ export const vaultFiles = pgTable('vault_files', {
   filename: text('filename').notNull(),
   size: integer('size').notNull(),
   mimeType: text('mime_type').notNull(),
+  iv: text('iv').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })

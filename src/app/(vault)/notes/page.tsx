@@ -12,7 +12,7 @@ export default async function NotesPage() {
   const session = await auth.api.getSession({
     headers: await headers(),
   })
-  if (!session) redirect('/login')
+  if (!session) redirect('/sign-in')
 
   const items = await db
     .select()
@@ -36,7 +36,7 @@ export default async function NotesPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-medium mb-6">Secure notes</h1>
+      <h1 className="text-2xl font-medium mb-6">Notes</h1>
       <NotesList notes={notes} />
     </div>
   )
