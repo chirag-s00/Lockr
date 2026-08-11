@@ -4,43 +4,19 @@ import { headers } from 'next/headers'
 import { db } from '@/db'
 import { vaultItems, vaultFiles } from '@/db/schema'
 import { s3, BUCKET } from '@/lib/s3'
-import { encryptBuffer, decryptBuffer } from '@/lib/crypto'
-import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { encryptBuffer } from '@/lib/crypto'
+import {
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { eq, and } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
-// GET — generate a presigned download URL for a file
-export async function GET(request: NextRequest) {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+import { validate } from '@/lib/validate'
+import { deleteFileSchema, ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '@/lib/schemas'
+import { z } from 'zod'
 
-  const fileId = request.nextUrl.searchParams.get('fileId')
-  if (!fileId) {
-    return NextResponse.json({ error: 'fileId required' }, { status: 400 })
-  }
-
-  const file = await db
-    .select()
-    .from(vaultFiles)
-    .where(eq(vaultFiles.id, fileId))
-    .then(r => r[0])
-
-  if (!file) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  }
-
-  const url = await getSignedUrl(
-    s3,
-    new GetObjectCommand({ Bucket: BUCKET, Key: file.s3Key }),
-    { expiresIn: 900 }
-  )
-
-  return NextResponse.json({ url, iv: file.iv, mimeType: file.mimeType })
-}
-
-// POST — upload a file: encrypt it, push to S3, save metadata
 export async function POST(request: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) {
@@ -48,12 +24,36 @@ export async function POST(request: NextRequest) {
   }
 
   const formData = await request.formData()
-  const file = formData.get('file') as File
-  const title = formData.get('title') as string
+  const file = formData.get('file') as File | null
+  const title = formData.get('title') as string | null
 
-  if (!file || !title) {
-    return NextResponse.json({ error: 'file and title required' }, { status: 400 })
+  // validate title
+  const titleValidation = validate(
+    z.string().min(1, 'Title is required').max(100).trim(),
+    title
+  )
+  if (!titleValidation.success) return titleValidation.response
+
+  // validate file exists
+  if (!file) {
+    return NextResponse.json({ error: 'File is required' }, { status: 400 })
   }
+
+  // validate file size
+  if (file.size > MAX_FILE_SIZE) {
+    return NextResponse.json(
+      { error: `File must be under ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+      { status: 400 }
+    )
+  }
+
+  // validate file type
+ if (!ALLOWED_MIME_TYPES.includes(file.type as typeof ALLOWED_MIME_TYPES[number])) {
+  return NextResponse.json(
+    { error: `File type not allowed. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}` },
+    { status: 400 }
+  )
+}
 
   const arrayBuffer = await file.arrayBuffer()
   const { ciphertext, iv } = encryptBuffer(Buffer.from(arrayBuffer))
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     id: vaultItemId,
     userId: session.user.id,
     type: 'document',
-    title,
+    title: titleValidation.data,
     encryptedData: '',
     iv: '',
   })
@@ -96,12 +96,12 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { fileId } = await request.json()
-  if (!fileId) {
-    return NextResponse.json({ error: 'fileId required' }, { status: 400 })
-  }
+  const body = await request.json()
+  const validation = validate(deleteFileSchema, body)
+  if (!validation.success) return validation.response
 
-  // get the file, scoped to current user
+  const { fileId } = validation.data
+
   const file = await db
     .select({
       id: vaultFiles.id,
@@ -122,15 +122,11 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  // delete from S3 first
-  await s3.send(
-    new DeleteObjectCommand({
-      Bucket: BUCKET,
-      Key: file.s3Key,
-    })
-  )
+  await s3.send(new DeleteObjectCommand({
+    Bucket: BUCKET,
+    Key: file.s3Key,
+  }))
 
-  // delete vault_item — cascades to vault_files automatically
   await db
     .delete(vaultItems)
     .where(eq(vaultItems.id, file.vaultItemId))

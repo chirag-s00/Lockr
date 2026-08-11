@@ -6,6 +6,8 @@ import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
 import { eq, and } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
+import { createNoteSchema, deleteNoteSchema } from '@/lib/schemas'
+import { validate } from '@/lib/validate'
 import type { NotePayload } from '@/types/vault'
 
 export async function POST(request: NextRequest) {
@@ -17,14 +19,10 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json()
-  const { title, noteBody, type } = body
+  const validation = validate(createNoteSchema, body)
+  if (!validation.success) return validation.response
 
-  if (!title || !noteBody || !type) {
-    return NextResponse.json(
-      { error: 'title, noteBody, and type are required' },
-      { status: 400 }
-    )
-  }
+  const { title, noteBody} = validation.data
 
   const payload: NotePayload = { body: noteBody }
   const { ciphertext, iv } = encryptData(payload)
@@ -34,7 +32,7 @@ export async function POST(request: NextRequest) {
     .values({
       id: nanoid(),
       userId: session.user.id,
-      type,
+      type: 'note',
       title,
       encryptedData: ciphertext,
       iv,
@@ -45,14 +43,16 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  })
+  const session = await auth.api.getSession({ headers: await headers() })
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { id } = await request.json()
+  const body = await request.json()
+  const validation = validate(deleteNoteSchema, body)
+  if (!validation.success) return validation.response
+
+  const { id } = validation.data
 
   await db
     .delete(vaultItems)

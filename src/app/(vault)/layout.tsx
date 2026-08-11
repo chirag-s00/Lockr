@@ -23,7 +23,7 @@ export default async function VaultLayout({
   <div className="flex h-screen">
     <aside className="w-64 min-w-64 h-screen border-r flex flex-col p-4 gap-1 overflow-hidden">
       <p className="text-xs font-medium text-muted-foreground px-2 mb-2">
-        Personal Vault
+        Lockr
       </p>
 
       <SidebarLink href="/dashboard" label="Dashboard" />

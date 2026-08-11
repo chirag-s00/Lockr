@@ -151,9 +151,19 @@ export function DocumentsList({ documents }: { documents: Document[] }) {
         />
         <Input
           type="file"
-          onChange={e => setFile(e.target.files?.[0] ?? null)}
+          accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.txt,.md"
+          onChange={e => {
+          const selected = e.target.files?.[0] ?? null
+          if (selected && selected.size > 10 * 1024 * 1024) {
+          setError('File must be under 10MB')
+          e.target.value = ''
+          return
+          }
+          setError('')
+          setFile(selected)
+          }}
           required
-        />
+          />
         {error && <p className="text-sm text-red-500">{error}</p>}
         <Button type="submit" disabled={uploading}>
           {uploading ? 'Uploading...' : 'Upload document'}
