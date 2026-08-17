@@ -21,4 +21,12 @@ export type DocumentPayload = {
   mimeType: string
 }
 
+export type AuditLogAction =
+  | 'sign_in'
+  | 'sign_out'
+  | 'note_created'
+  | 'note_deleted'
+  | 'document_uploaded'
+  | 'document_deleted'
+
 export type VaultItemPayload = NotePayload | DocumentPayload

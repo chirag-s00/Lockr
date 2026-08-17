@@ -131,3 +131,23 @@ export const vaultFiles = pgTable('vault_files', {
   iv: text('iv').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
+
+export const auditLogActionEnum = pgEnum('audit_log_action',[
+  'sign_in',
+  'sign_out',
+  'note_created',
+  'note_deleted',
+  'document_uploaded',
+  'document_deleted',
+])
+export const auditLog = pgTable('audit_log',{
+   id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  action: auditLogActionEnum('action').notNull(),
+  metadata: text('metadata'),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
