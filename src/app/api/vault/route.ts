@@ -9,6 +9,7 @@ import { nanoid } from 'nanoid'
 import { createNoteSchema, deleteNoteSchema } from '@/lib/schemas'
 import { validate } from '@/lib/validate'
 import type { NotePayload } from '@/types/vault'
+import {getRequestInfo, writeAuditLog} from '@/lib/audit'
 
 export async function POST(request: NextRequest) {
   const session = await auth.api.getSession({
@@ -23,6 +24,8 @@ export async function POST(request: NextRequest) {
   if (!validation.success) return validation.response
 
   const { title, noteBody} = validation.data
+   const { ipAddress, userAgent } = getRequestInfo(request)
+
 
   const payload: NotePayload = { body: noteBody }
   const { ciphertext, iv } = encryptData(payload)
@@ -39,6 +42,14 @@ export async function POST(request: NextRequest) {
     })
     .returning()
 
+    await writeAuditLog({
+    userId: session.user.id,
+    action: 'note_created',
+    metadata: { title },
+    ipAddress,
+    userAgent,
+  })
+
   return NextResponse.json({ item: item[0] }, { status: 201 })
 }
 
@@ -53,6 +64,7 @@ export async function DELETE(request: NextRequest) {
   if (!validation.success) return validation.response
 
   const { id } = validation.data
+  const { ipAddress, userAgent } = getRequestInfo(request)
 
   await db
     .delete(vaultItems)
@@ -62,6 +74,14 @@ export async function DELETE(request: NextRequest) {
         eq(vaultItems.userId, session.user.id)
       )
     )
+     await writeAuditLog({
+    userId: session.user.id,
+    action: 'note_deleted',
+    metadata: { id },
+    ipAddress,
+    userAgent,
+  })
+
 
   return NextResponse.json({ success: true })
 }

@@ -19,7 +19,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'fileId required' }, { status: 400 })
   }
 
-  // fetch file metadata, scoped to current user via join
   const file = await db
     .select({
       id: vaultFiles.id,
@@ -53,7 +52,6 @@ export async function GET(request: NextRequest) {
   }
   const cipherBuffer = Buffer.concat(chunks)
 
-  // decrypt server-side — key never leaves the server
   const plainBuffer = decryptBuffer(cipherBuffer, file.iv)
 
   return new NextResponse(new Uint8Array(plainBuffer), {

@@ -16,6 +16,7 @@ import { nanoid } from 'nanoid'
 import { validate } from '@/lib/validate'
 import { deleteFileSchema, ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '@/lib/schemas'
 import { z } from 'zod'
+import { getRequestInfo,writeAuditLog } from '@/lib/audit'
 
 export async function POST(request: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -87,6 +88,20 @@ export async function POST(request: NextRequest) {
     iv,
   }).returning()
 
+  const { ipAddress, userAgent } = getRequestInfo(request)
+
+  await writeAuditLog({
+  userId: session.user.id,
+  action: 'document_uploaded',
+  metadata: {
+    title: titleValidation.data,
+    filename: file.name,
+    size: file.size,
+  },
+  ipAddress,
+  userAgent,
+})
+
   return NextResponse.json({ file: fileRecord[0] }, { status: 201 })
 }
 
@@ -130,6 +145,15 @@ export async function DELETE(request: NextRequest) {
   await db
     .delete(vaultItems)
     .where(eq(vaultItems.id, file.vaultItemId))
+
+  const { ipAddress, userAgent } = getRequestInfo(request)
+    await writeAuditLog({
+        userId: session.user.id,
+        action: 'document_deleted',
+        metadata: { fileId },
+        ipAddress,
+        userAgent,
+    })
 
   return NextResponse.json({ success: true })
 }
