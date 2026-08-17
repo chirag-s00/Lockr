@@ -1,6 +1,8 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { db } from '@/db'
+import { writeAuditLog } from './audit'
+import { createAuthMiddleware } from 'better-auth/api'
 
 export const auth = betterAuth({
    socialProviders: {
@@ -31,4 +33,42 @@ export const auth = betterAuth({
   rateLimit: {
     enabled: true,
   },
+
+  
+hooks: {
+  after: createAuthMiddleware(async (ctx) => {
+    if (
+      ctx.path === '/sign-in/email' ||
+      ctx.path === '/sign-in/social'
+    ) {
+      const userId = ctx.context.newSession?.user?.id
+
+      if (userId) {
+        await writeAuditLog({
+          userId,
+          action: 'sign_in',
+          ipAddress:
+            ctx.request?.headers.get('x-forwarded-for') ?? undefined,
+          userAgent:
+            ctx.request?.headers.get('user-agent') ?? undefined,
+        })
+      }
+    }
+  }
+)
+},
+databaseHooks: {
+  session: {
+    delete: {
+      after: async (session) => {
+        await writeAuditLog({
+          userId: session.userId,
+          action: 'sign_out',
+          ipAddress: session.ipAddress ?? undefined,
+          userAgent: session.userAgent ?? undefined,
+        })
+      },
+    },
+  },
+},
 })
