@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {PdfPreview} from '@/components/PdfPreview'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -112,15 +113,20 @@ export function DocumentsList({ documents }: { documents: Document[] }) {
         />
       )
     }
-    if (mimeType === 'application/pdf' || mimeType.startsWith('text/')) {
+    if (mimeType === 'application/pdf') {
       return (
-        <iframe
-          src={url}
-          className="w-full h-96 border rounded-lg"
-          title="document preview"
-        />
+        <PdfPreview url={url} />
       )
     }
+    if (mimeType.startsWith('text/')) {
+    return (
+      <iframe
+        src={url}
+        className="w-full h-96 border rounded-lg"
+        title="Text preview"
+      />
+    )
+  }
     return (
       <div className="p-4 border rounded-lg text-sm text-muted-foreground">
         Preview not available for this file type.{' '}

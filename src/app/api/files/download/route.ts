@@ -55,9 +55,11 @@ export async function GET(request: NextRequest) {
   const plainBuffer = decryptBuffer(cipherBuffer, file.iv)
 
   return new NextResponse(new Uint8Array(plainBuffer), {
+    status: 200,
     headers: {
       'Content-Type': file.mimeType,
       'Content-Disposition': `inline; filename="${file.filename}"`,
+      'Cache-Control': 'private, no-store',
     },
   })
 }
