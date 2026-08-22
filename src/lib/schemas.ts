@@ -27,6 +27,13 @@ export const deleteFileSchema = z.object({
     .min(1, 'File ID is required'),
 })
 
+export const updateNoteSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1).max(100).trim(),
+  noteBody : z.string().min(1, 'Note body is required').max(50_000, 'Note is too long')
+
+})
+
 export const ALLOWED_MIME_TYPES = [
   'image/jpeg',
   'image/png',

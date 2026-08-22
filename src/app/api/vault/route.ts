@@ -6,7 +6,7 @@ import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
 import { eq, and } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
-import { createNoteSchema, deleteNoteSchema } from '@/lib/schemas'
+import { createNoteSchema, deleteNoteSchema, updateNoteSchema } from '@/lib/schemas'
 import { validate } from '@/lib/validate'
 import type { NotePayload } from '@/types/vault'
 import {getRequestInfo, writeAuditLog} from '@/lib/audit'
@@ -85,3 +85,41 @@ export async function DELETE(request: NextRequest) {
 
   return NextResponse.json({ success: true })
 }
+
+export async function PUT(request: NextRequest){
+  const session = await auth.api.getSession({headers: await headers()})
+  if (!session){
+    return NextResponse.json({error:'Unauthorized'}, {status:401})
+  }
+
+  const body = await request.json()
+  const validation = validate(updateNoteSchema, body)
+  if(!validation.success) return validation.response
+
+  const {id, title, noteBody} = validation.data
+  const payload : NotePayload = {body : noteBody}
+  const {ciphertext, iv} = encryptData(payload)
+
+  const updated = await db
+                    .update(vaultItems)
+                    .set({
+                      title,
+                      encryptedData: ciphertext,
+                      iv,
+                      updatedAt: new Date(),
+                    })
+                    .where(
+                      and(
+                        eq(vaultItems.id,id),
+                        eq(vaultItems.userId,session.user.id)
+                      )
+                    )
+                    .returning()
+                  
+   if (!updated.length) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
+  return NextResponse.json({ item: updated[0] })
+}
+

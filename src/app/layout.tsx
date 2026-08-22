@@ -8,7 +8,7 @@ const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 const geist = Geist({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Personal Vault',
+  title: 'Lockr',
   description: 'Your secure personal vault',
 }
 
