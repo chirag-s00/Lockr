@@ -3,7 +3,7 @@ import { vaultItems } from '@/db/schema'
 import { decryptData } from '@/lib/crypto'
 import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import type { NotePayload } from '@/types/vault'
 import { NotesList } from '@/modules/notes/NotesList'
@@ -22,7 +22,7 @@ export default async function NotesPage() {
         eq(vaultItems.userId, session.user.id),
         eq(vaultItems.type, 'note')
       )
-    )
+    ).orderBy(desc(vaultItems.createdAt))
 
   const notes = items.map(item => ({
     id: item.id,
