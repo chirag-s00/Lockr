@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1781682958358,
-      "tag": "0000_thick_spacker_dave",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1781725830242,
-      "tag": "0001_flat_korvac",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1785605501048,
-      "tag": "0002_massive_tiger_shark",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1786985289732,
-      "tag": "0003_natural_infant_terrible",
+      "when": 1788103579050,
+      "tag": "0000_silly_shinko_yamashiro",
       "breakpoints": true
     }
   ]

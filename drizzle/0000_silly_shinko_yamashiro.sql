@@ -1,3 +1,5 @@
+CREATE TYPE "public"."audit_log_action" AS ENUM('sign_in', 'sign_out', 'note_created', 'note_deleted', 'document_uploaded', 'document_deleted');--> statement-breakpoint
+CREATE TYPE "public"."vault_item_type" AS ENUM('note', 'document');--> statement-breakpoint
 CREATE TABLE "account" (
 	"id" text PRIMARY KEY NOT NULL,
 	"account_id" text NOT NULL,
@@ -12,6 +14,16 @@ CREATE TABLE "account" (
 	"password" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "audit_log" (
+	"id" text PRIMARY KEY NOT NULL,
+	"user_id" text NOT NULL,
+	"action" "audit_log_action" NOT NULL,
+	"metadata" text,
+	"ip_address" text,
+	"user_agent" text,
+	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "session" (
@@ -37,6 +49,28 @@ CREATE TABLE "user" (
 	CONSTRAINT "user_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
+CREATE TABLE "vault_files" (
+	"id" text PRIMARY KEY NOT NULL,
+	"vault_item_id" text NOT NULL,
+	"s3_key" text NOT NULL,
+	"filename" text NOT NULL,
+	"size" integer NOT NULL,
+	"mime_type" text NOT NULL,
+	"iv" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "vault_items" (
+	"id" text PRIMARY KEY NOT NULL,
+	"user_id" text NOT NULL,
+	"type" "vault_item_type" NOT NULL,
+	"title" text NOT NULL,
+	"encrypted_data" text NOT NULL,
+	"iv" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "verification" (
 	"id" text PRIMARY KEY NOT NULL,
 	"identifier" text NOT NULL,
@@ -46,14 +80,11 @@ CREATE TABLE "verification" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "users" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-DROP TABLE "users" CASCADE;--> statement-breakpoint
-ALTER TABLE "vault_items" DROP CONSTRAINT "vault_items_user_id_users_id_fk";
---> statement-breakpoint
-ALTER TABLE "vault_files" ALTER COLUMN "size" SET DATA TYPE integer;--> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "vault_files" ADD CONSTRAINT "vault_files_vault_item_id_vault_items_id_fk" FOREIGN KEY ("vault_item_id") REFERENCES "public"."vault_items"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "vault_items" ADD CONSTRAINT "vault_items_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "account_userId_idx" ON "account" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "session_userId_idx" ON "session" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX "verification_identifier_idx" ON "verification" USING btree ("identifier");--> statement-breakpoint
-ALTER TABLE "vault_items" ADD CONSTRAINT "vault_items_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
+CREATE INDEX "verification_identifier_idx" ON "verification" USING btree ("identifier");
